@@ -7,12 +7,62 @@ class user{
     async getPolicyInfo(req,res){
         let userName=req.query.user;
         let userId=await userCollection.findOne({firstName:{ $regex: '^' + userName, $options: 'i' }})
+        console.log("_------------------",userId)
         if(userId){
-            let policy=await policyInfoCollection.findOne({userId:new ObjectId(userId._id)})
-            .populate("policyCategory","categoryName")
-            .populate("company","companyName")
-            .populate("agentId","agentName")
-            .populate("userAccountId","accountName")
+            let policy=await policyInfoCollection.aggregate([{
+                $match:{userId:new ObjectId(userId._id)}
+            },{
+                $lookup:{
+                    from:"agents",
+                    localField:"agentId",
+                    foreignField:"_id",
+                    as:"agent"
+                }
+            },{$unwind:'$agent'},
+            {
+                $lookup:{
+                    from:"users",
+                    localField:"userId",
+                    foreignField:"_id",
+                    as:"userdata"
+                }
+            },{$unwind:"$userdata"},
+            {
+                $lookup:{
+                    from:"policycategories",
+                    localField:"policyCategory",
+                    foreignField:"_id",
+                    as:"policyCategory"
+                }
+            },{$unwind:"$policyCategory"},
+            {
+                $lookup:{
+                    from:"policycareers",
+                    localField:"company",
+                    foreignField:"_id",
+                    as:"company"
+                }
+            },{$unwind:"$company"},
+            {
+                $lookup:{
+                    from:"useraccounts",
+                    localField:"userAccountId",
+                    foreignField:"_id",
+                    as:"account"
+                }
+            },{$unwind:"$account"},{
+                $project:{
+                    agent:"$agent.agentName",
+                    policyNumber:1,
+                    policyStartDate:1,
+                    policyEndDate:1,
+                    policyCategory:"$policyCategory.categoryName",
+                    companyName:"$company",
+                    accountName:"$account.accountName"
+                }
+            }
+        ])
+        let policyData=policy[0]
             console.log(policy)
             let userData={
                 userName:userId.firstName,
@@ -20,18 +70,19 @@ class user{
                 zip:userId.zip,
                 phone:userId.phoneNumber,
                 email:userId.email,
-                accountName:policy.userAccountId.accountName,
+                accountName:policyData.accountName,
             }
-            let policyData={
+            
+            const finalObj={
                 userData:userData,
-                agent:policy.agentId.agentName,
-                policyNumber:policy.policyNumber,
-                policyStartDate:policy.policyStartDate,
-                policyEndDate:policy.policyEndDate,
-                policyCategory:policy.policyCategory.categoryName,
-                companyName:policy.company.companyName
+                agent:policyData.agent,
+                policyNumber:policyData.policyNumber,
+                policyStartDate:policyData.policyStartDate,
+                policyEndDate:policyData.policyEndDate,
+                policyCategory:policyData.policyCategory,
+                companyName:policyData.companyName.companyName
             }
-            res.status(200).json({message:"user policy details",policy:policyData})
+            res.status(200).json({message:"user policy details",policy:finalObj})
         }
         else{
             res.status(404).json({message:"user does not exists"})

@@ -1,0 +1,18 @@
+upload csv ->POST  http://localhost:5005/processCsv
+
+aggregate user GET -> http://localhost:5005/userPolicyList?limit=5&page=1
+
+schedule message POST http://localhost:5005/schedule/message
+
+body->
+{
+    "message":"after 1 mins good day",
+    "time":"2024-07-01T14:34:00.888Z"
+}
+
+
+Search API GET http://localhost:5005/getPolicyInfo?user=Omar
+
+start server using pm2 for auto restart after reaching 70% -> pm2 start ecosystem.config.js
+
+

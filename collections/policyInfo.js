@@ -17,4 +17,4 @@ const policySchema=new schema({
 const policyInfoCollection=mongoose.model("policyInfo",policySchema)
 module.exports=policyInfoCollection;
 
-//state, zip code, email, gender, userType
+

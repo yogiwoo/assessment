@@ -12,7 +12,7 @@ const {createAgent,getAgent}=new agentModel()
 const {scheduleMessage}=new messageModel()
 const {getPolicyInfo,getUserPolicyList}=new userModel();
 router.use(express.json())
-router.post('/create/agents',upload.single('files'),async(req,res)=>{
+router.post('/processCsv',upload.single('files'),async(req,res)=>{
     await createAgent(req,res);
 })
 
